@@ -11,11 +11,11 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include "get_next_line_utils.c"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+
 # ifndef BUFFER_SIZE
 # define BUFFER_SIZE 42
 # endif
@@ -24,86 +24,86 @@ char    *get_completed_line(char *buff, char **pre_line)
 {
     char    *new_line;
 
-    new_line = join(*pre_line, buff);
+    new_line = ft_strjoin(*pre_line, buff);
     free(*pre_line);
     return (new_line);
 }
 
+
+
+char    **get_rest_of_line(t_list *lst, int fd)
+{
+    if (fd == 1 || fd == 2)
+        fd = 0;
+    while (lst)
+    {
+        if (lst->fd == fd)
+            return (&(lst->rest_of_line));
+        lst = lst->next;
+    }
+    return (NULL);
+}
+
+char    *final_line(char **line)
+{
+    char    *temp;
+    char    *line_returned;
+    char    *address;
+
+    temp = ft_strdup(*line);
+    free(*line);
+    address = ft_strchr(temp, '\n');
+    if (address == NULL)
+    {
+        *line = ft_substr(NULL, 0, 0);
+        line_returned = ft_strdup(temp);
+    }
+    else
+    {
+        *line = ft_substr(temp, (address - temp) + 1, ft_strlen(temp));
+        line_returned = ft_substr(temp, 0, (address - temp) + 1);
+    }
+    free(temp);
+    return (line_returned);
+}
+
 char    *get_next_line(int fd)
 {
-    char    buff[BUFFER_SIZE + 1];
-    char    *line;
-    ssize_t s;
-    int     i;
+    char            buff[BUFFER_SIZE + 1];
+    static t_list   *files = NULL;
+    char            **line;
+    ssize_t         s;
 
-    i = 0;
-    if (BUFFER_SIZE < 1 || fd < 0 || read(fd, &buff[i], 0))
+    if (BUFFER_SIZE < 1 || fd < 0 || read(fd, buff, 0))
         return (NULL);
-    line = NULL;
-    while (check_new_line(line, '\n') == 0)
+    line = get_rest_of_line(files, fd);
+    if (line == NULL)
     {
-        i = 0;
-        while (i < BUFFER_SIZE)
-        {
-            s = read(fd, &buff[i], 1);
-            if (s != 1)
-                return (NULL);
-            if (buff[i] == '\n')
-            {
-                i ++ ;
-                break ;
-            }
-            i ++;
-        }
-        if (i == 0 && buff[i] == 0)
-            return (NULL);
-        buff[i] = '\0';
-        line = get_completed_line(buff, &line);
+        ft_lstadd_front(&files, ft_lstnew(fd));
+        line = &(files->rest_of_line);
     }
-    return (line);
+    s = BUFFER_SIZE;
+    while (ft_strchr(*line, '\n') == NULL && (long)s == (long)BUFFER_SIZE)
+    {
+        if ((s = read(fd, buff, BUFFER_SIZE)) < 1)
+            return(NULL);
+        buff[s] = '\0';
+        *line = get_completed_line(buff, line);
+    }
+    return (final_line(line));
 }
 
 // https://www.youtube.com/watch?v=8E9siq7apUU
 
 int main()
 {
-    int     fd1, fd2, fd3;
-    char    *t;
-    char    c;
-    ssize_t s;
+    int fd = open("ff.txt", O_RDONLY);
+    char *t ;
 
-    fd1 = open("file.txt", O_RDONLY);
-    fd2 = open("ff.txt", O_RDONLY);
-    fd3 = open("line.txt", O_RDONLY);
-    t = get_next_line(fd1);
-    printf("\n++++++++++++++++\n%s", t);
+    t = get_next_line(fd);
+    printf("%s", t);
     free(t);
-    printf("-------------------------------\n");
-    t = get_next_line(fd2);
-    printf("\n++++++++++++++\n%s", t);
+    t = get_next_line(fd);
+    printf("%s", t);
     free(t);
-    printf("-------------------------------\n");
-    t = get_next_line(fd3);
-    printf("\n++++++++++++++\n%s", t);
-    free(t);
-    printf("-------------------------------\n");
-    t = get_next_line(fd1);
-    printf("\n++++++++++++++++\n%s", t);
-    free(t);
-    printf("-------------------------------\n");
-    // while((s = read(fd, &c, 1)))
-    // {
-    //     if (s != 1)
-    //     {
-    //         printf("nothing was readed !!\n");
-    //         break;
-    //     }
-    //     printf("INSIDE !!\n");
-    //     break ;
-    // }
-    // printf("%zu\n%d\n%d\n", s, fd, c);
-    close(fd1);
-    close(fd2);
-    close(fd3);
-    return 0;
 }

@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 void incrementAndPrint() {
-    static int count = 0; // Static variable declaration and initialization
-    count++;
+    static int count = 0;// Static variable declaration and initialization
+	count++;
     printf("Count: %d\n", count);
 }
 
