@@ -16,6 +16,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "get_next_line.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 char	*get_completed_line(char *buff, char **pre_line)
 {
 	char	*new_line;
@@ -58,14 +64,14 @@ char	*final_line(char **line)
 char	*get_next_line(int fd)
 {
 	char			buff[BUFFER_SIZE + 1];
-	static char		*line = NULL;
+	static char		*line;
 	char			*last;
 	ssize_t			s;
 
 	if (BUFFER_SIZE < 1 || fd < 0 || read(fd, buff, 0))
 		return (NULL);
 	s = BUFFER_SIZE;
-	while (ft_strchr(line, '\n') == NULL && (long)s == (long)BUFFER_SIZE)
+	while (ft_strchr(line, '\n') == NULL && s == BUFFER_SIZE)
 	{
 		s = read(fd, buff, BUFFER_SIZE);
 		buff[s] = '\0';

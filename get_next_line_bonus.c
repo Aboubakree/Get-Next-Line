@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line_bonus.h"
+#include "get_next_line.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -21,60 +21,9 @@ char	*get_completed_line(char *buff, char **pre_line)
 	char	*new_line;
 
 	new_line = ft_strjoin(*pre_line, buff);
-	free(*pre_line);
+	if (*pre_line != NULL)
+		free(*pre_line);
 	return (new_line);
-}
-
-void	delete_node(t_list **lst, int fd)
-{
-	t_list	*to_free;
-	t_list	*pre;
-	t_list	*ls;
-
-	if (lst == NULL)
-		return ;
-	to_free = *lst;
-	pre = *lst;
-	ls = *lst;
-	while (to_free->next)
-	{
-		if (to_free->fd == fd)
-		{
-			if (pre == ls)
-				pre = to_free->next;
-			else
-				pre->next = to_free->next;
-			free(to_free);
-		}
-		pre = to_free;
-		to_free = to_free->next;
-	}
-	if (to_free->fd == fd)
-		free(to_free);
-}
-
-char	**get_rest_of_line(t_list **lst, int fd)
-{
-	t_list	*new;
-	t_list	*temp;
-
-	temp = *lst;
-	if (fd == 1 || fd == 2)
-		fd = 0;
-	while (temp)
-	{
-		if (temp->fd == fd)
-			return (&(temp->rest_of_line));
-		temp = temp->next;
-	}
-	new = malloc(sizeof(t_list));
-	if (new == NULL)
-		return (NULL);
-	new->fd = fd;
-	new->rest_of_line = NULL;
-	new->next = *lst;
-	*lst = new;
-	return (&((*lst)->rest_of_line));
 }
 
 char	*final_line(char **line)
@@ -84,7 +33,8 @@ char	*final_line(char **line)
 	char	*address;
 
 	temp = ft_strdup(*line);
-	free(*line);
+	if (*line != NULL)
+		free(*line);
 	address = ft_strchr(temp, '\n');
 	if (address == NULL)
 	{
@@ -94,6 +44,11 @@ char	*final_line(char **line)
 	else
 	{
 		*line = ft_substr(temp, (address - temp) + 1, ft_strlen(temp));
+		if (ft_strlen(*line) == 0)
+		{
+			free(*line);
+			*line = NULL;
+		}
 		line_returned = ft_substr(temp, 0, (address - temp) + 1);
 	}
 	free(temp);
@@ -103,31 +58,31 @@ char	*final_line(char **line)
 char	*get_next_line(int fd)
 {
 	char			buff[BUFFER_SIZE + 1];
-	static t_list	*files = NULL;
-	char			**line;
+	static char		*line[10240];
+	char			*last;
 	ssize_t			s;
 
 	if (BUFFER_SIZE < 1 || fd < 0 || read(fd, buff, 0))
 		return (NULL);
-	line = get_rest_of_line(&files, fd);
 	s = BUFFER_SIZE;
-	buff[0] = '\200';
-	while (ft_strchr(*line, '\n') == NULL && (long)s == (long)BUFFER_SIZE)
+	while (ft_strchr(line[fd], '\n') == NULL && s == BUFFER_SIZE)
 	{
 		s = read(fd, buff, BUFFER_SIZE);
-		if (s < 1 && buff[0] == '\200')
+		buff[s] = '\0';
+		if (s < 1 && buff[0] == '\0')
 		{
-			delete_node(&files, fd);
-			if (*line != NULL && line[0][0] != '\0')
-				return (*line);
+			if (line[fd] != NULL)
+			{	
+				last = line[fd];
+				line[fd] = NULL;
+				return (last);
+			}
 			return (NULL);
 		}
-		buff[s] = '\0';
-		*line = get_completed_line(buff, line);
+		line[fd] = get_completed_line(buff, &line[fd]);
 	}
-	return (final_line(line));
+	return (final_line(&line[fd]));
 }
-
 // // https://www.youtube.com/watch?v=8E9siq7apUU
 
 // int main()
