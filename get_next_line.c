@@ -16,12 +16,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "get_next_line.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-
 char	*get_completed_line(char *buff, char **pre_line)
 {
 	char	*new_line;
@@ -60,6 +54,15 @@ char	*final_line(char **line)
 	free(temp);
 	return (line_returned);
 }
+// printf("%d\n", BUFFER_SIZE);
+
+void	*reading_failed(char **line)
+{
+	if (*line != NULL)
+		free(*line);
+	*line = NULL;
+	return (NULL);
+}
 
 char	*get_next_line(int fd)
 {
@@ -69,22 +72,22 @@ char	*get_next_line(int fd)
 	ssize_t			s;
 
 	if (BUFFER_SIZE < 1 || fd < 0 || read(fd, buff, 0))
-		return (NULL);
+		return (reading_failed(&line));
 	s = BUFFER_SIZE;
 	while (ft_strchr(line, '\n') == NULL && s == BUFFER_SIZE)
 	{
 		s = read(fd, buff, BUFFER_SIZE);
-		buff[s] = '\0';
-		if (s < 1 && buff[0] == '\0')
+		if (s < 1)
 		{
-			if (line != NULL && line[0] != '\0')
+			if (line != NULL && line[0] != '\0' && s != -1)
 			{	
 				last = line;
 				line = NULL;
 				return (last);
 			}
-			return (NULL);
+			return (reading_failed(&line));
 		}
+		buff[s] = '\0';
 		line = get_completed_line(buff, &line);
 	}
 	return (final_line(&line));
@@ -92,7 +95,7 @@ char	*get_next_line(int fd)
 // 
 // int main()
 // {
-// 	int fd = open("test_files/nl", O_RDONLY);
+// 	int fd = open("read_error.txt", O_RDONLY);
 // 	char *t ;
 
 // 	t = get_next_line(fd);
@@ -101,4 +104,18 @@ char	*get_next_line(int fd)
 // 	t = get_next_line(fd);
 // 	printf("%s\n", t);
 // 	free(t);
+// 	t = get_next_line(fd);
+// 	printf("%s\n", t);
+// 	free(t);
+// 	t = get_next_line(fd);
+// 	printf("%s\n", t);
+// 	free(t);
+// 	t = get_next_line(fd);
+// 	printf("%s\n", t);
+// 	close(fd);
+// 	fd = open("read_error.txt", O_RDONLY);
+// 	t = get_next_line(fd);
+// 	printf("%s\n", t);
+// 	free(t);
+
 // }
